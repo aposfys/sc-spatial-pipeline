@@ -36,7 +36,7 @@ make analysis   # stability table -> results/RESULTS.md
 make test
 ```
 
-`--mode full` runs all 144 combinations instead of the 9 single-axis deviations.
+The same steps are available as `scspatial fetch` / `grid` / `sensitivity`. `--mode full` runs all 144 combinations instead of the 9 single-axis deviations.
 
 ### A note on the metrics
 
@@ -62,5 +62,6 @@ src/scspatial/
 
 ### More
 
+- [Analysis: what was done, and why it was done that way](ANALYSIS.md)
 - [Full results](results/RESULTS.md)
 - [What is varied and what is held fixed, and the traps the pipeline is built to avoid](docs/DESIGN.md)
