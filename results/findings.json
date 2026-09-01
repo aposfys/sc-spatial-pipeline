@@ -1,0 +1,137 @@
+{
+ "dataset": "visium_hne",
+ "reference": {
+  "key": "cp10k_log1p|seurat2000|k15|r1.0|fil",
+  "n_cells": 2688,
+  "n_clusters": 18,
+  "config": {
+   "key": "cp10k_log1p|seurat2000|k15|r1.0|fil",
+   "normalisation": "cp10k_log1p",
+   "hvg_method": "seurat",
+   "n_hvg": 2000,
+   "n_neighbours": 15,
+   "resolution": 1.0,
+   "filter_order": "filter_then_normalise",
+   "seed": 0
+  }
+ },
+ "comparisons": [
+  {
+   "key": "cp10k_log1p|seurat2000|k15|r1.0|fil",
+   "changed_axis": "(reference)",
+   "n_clusters": 18,
+   "shared_cells": 2688,
+   "ari": 1.0,
+   "raw_churn": 0.0,
+   "churn": 0.0,
+   "worst_rare_retention": 1.0,
+   "n_rare_populations": 9,
+   "conclusion_jaccard": 1.0,
+   "seconds": 19.20243000984192
+  },
+  {
+   "key": "cpm_log1p|seurat2000|k15|r1.0|fil",
+   "changed_axis": "normalisation = cpm_log1p",
+   "n_clusters": 18,
+   "shared_cells": 2688,
+   "ari": 0.7783039707171813,
+   "raw_churn": 0.8537946428571429,
+   "churn": 0.13950892857142858,
+   "worst_rare_retention": 0.5384615384615384,
+   "n_rare_populations": 9,
+   "conclusion_jaccard": 0.0,
+   "seconds": 2.9449398517608643
+  },
+  {
+   "key": "none|seurat2000|k15|r1.0|fil",
+   "changed_axis": "normalisation = none",
+   "n_clusters": 19,
+   "shared_cells": 2688,
+   "ari": 0.809986177166741,
+   "raw_churn": 0.8898809523809523,
+   "churn": 0.15401785714285715,
+   "worst_rare_retention": 0.5384615384615384,
+   "n_rare_populations": 9,
+   "conclusion_jaccard": 0.0,
+   "seconds": 5.223201036453247
+  },
+  {
+   "key": "cp10k_log1p|cell_ranger2000|k15|r1.0|fil",
+   "changed_axis": "hvg_method = cell_ranger",
+   "n_clusters": 17,
+   "shared_cells": 2688,
+   "ari": 0.864716691765378,
+   "raw_churn": 0.7775297619047619,
+   "churn": 0.07552083333333333,
+   "worst_rare_retention": 0.7722772277227723,
+   "n_rare_populations": 9,
+   "conclusion_jaccard": 0.0625,
+   "seconds": 4.499025106430054
+  },
+  {
+   "key": "cp10k_log1p|seurat4000|k15|r1.0|fil",
+   "changed_axis": "n_hvg = 4000",
+   "n_clusters": 17,
+   "shared_cells": 2688,
+   "ari": 0.8331565719057517,
+   "raw_churn": 0.6763392857142857,
+   "churn": 0.10491071428571429,
+   "worst_rare_retention": 0.7227722772277227,
+   "n_rare_populations": 9,
+   "conclusion_jaccard": 0.058823529411764705,
+   "seconds": 4.361013889312744
+  },
+  {
+   "key": "cp10k_log1p|seurat2000|k10|r1.0|fil",
+   "changed_axis": "n_neighbours = 10",
+   "n_clusters": 20,
+   "shared_cells": 2688,
+   "ari": 0.848499835244801,
+   "raw_churn": 0.6313244047619048,
+   "churn": 0.12202380952380952,
+   "worst_rare_retention": 0.7107438016528925,
+   "n_rare_populations": 9,
+   "conclusion_jaccard": 0.19047619047619047,
+   "seconds": 4.638648986816406
+  },
+  {
+   "key": "cp10k_log1p|seurat2000|k30|r1.0|fil",
+   "changed_axis": "n_neighbours = 30",
+   "n_clusters": 15,
+   "shared_cells": 2688,
+   "ari": 0.8832817448703114,
+   "raw_churn": 0.4966517857142857,
+   "churn": 0.09523809523809523,
+   "worst_rare_retention": 0.5,
+   "n_rare_populations": 9,
+   "conclusion_jaccard": 0.07142857142857142,
+   "seconds": 4.467534065246582
+  },
+  {
+   "key": "cp10k_log1p|seurat2000|k15|r0.5|fil",
+   "changed_axis": "resolution = 0.5",
+   "n_clusters": 11,
+   "shared_cells": 2688,
+   "ari": 0.7378912959632226,
+   "raw_churn": 0.6257440476190477,
+   "churn": 0.2507440476190476,
+   "worst_rare_retention": 0.5384615384615384,
+   "n_rare_populations": 9,
+   "conclusion_jaccard": 0.0,
+   "seconds": 4.547572135925293
+  },
+  {
+   "key": "cp10k_log1p|seurat2000|k15|r1.0|nor",
+   "changed_axis": "filter_order = normalise_then_filter",
+   "n_clusters": 18,
+   "shared_cells": 2688,
+   "ari": 1.0,
+   "raw_churn": 0.0,
+   "churn": 0.0,
+   "worst_rare_retention": 1.0,
+   "n_rare_populations": 9,
+   "conclusion_jaccard": 1.0,
+   "seconds": 3.5499022006988525
+  }
+ ]
+}
