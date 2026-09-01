@@ -17,7 +17,10 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
-dependencies = ["numpy>=1.24"]
+# scipy is here, not in the analysis extra, because matched_label_churn needs an
+# assignment solver and that lives in the stability layer CI exercises. It is a numerics
+# dependency, not the scverse stack -- which stays optional.
+dependencies = ["numpy>=1.24", "scipy>=1.11"]
 
 [project.optional-dependencies]
 sc = ["scanpy>=1.10", "anndata>=0.10"]
