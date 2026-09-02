@@ -46,6 +46,27 @@ One honest negative: **filter order made no difference at all** (ARI 1.000, zero
 churn). At these thresholds no spot is filtered differently, so the order cannot
 matter. Worth stating rather than quietly dropping the axis.
 
+### Prior work
+
+**The pattern measured here — a global metric staying reassuring while the downstream
+conclusion moves — is published for bulk transcriptomics, and this is its spatial analogue
+rather than a new phenomenon.**
+
+- Paton et al., *Nucleic Acids Research* 2023 (FLOP) — end-to-end analysis of how pipeline
+  choices propagate into functional enrichment. They report "effects not noticeable at the
+  gene-level" that appear in gene-set space, and find filtering has the largest impact on
+  agreement between pipelines. That is the same shape as ARI 0.848 alongside 0–19%
+  conclusion overlap, one level up the stack.
+- Chen et al., *iMeta* 2025 — 14 spatial clustering methods over ~600 datasets, explicitly
+  investigating how preprocessing pipelines influence clustering outcomes.
+- Heumos et al., *Nature Reviews Genetics* 2023 — the best-practice synthesis these
+  defensible-choice ranges are drawn from.
+
+What is specific here is the readout: neighbourhood enrichment as the *conclusion* metric
+rather than cluster agreement, and rare-population retention tracked separately, which is
+where the churn concentrates. One dataset, single-choice deviations only, so it measures the
+width of the tree near the reference path and not the whole space.
+
 ### More
 
 - [Analysis](ANALYSIS.md) — what was done and why, including two metrics that are easy to get wrong
