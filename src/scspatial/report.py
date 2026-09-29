@@ -177,7 +177,7 @@ def render(findings: dict) -> str:
             f"ARI is **{median_ari:.3f}** and the median conclusion overlap is "
             f"**{median_overlap:.2f}**."
             + (
-                f" Left out because no spot changed cluster: {', '.join(unchanged)}."
+                f" `{'`, `'.join(unchanged)}` is left out because no spot changed cluster."
                 if unchanged
                 else ""
             )

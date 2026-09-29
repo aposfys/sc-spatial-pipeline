@@ -82,7 +82,10 @@ def test_render_leaves_a_deviation_that_changed_nothing_out_of_the_median() -> N
     text = report.render({"dataset": "toy", "reference": {"n_cells": 6}, "comparisons": rows})
     assert "7 deviations that changed the clustering" in text
     assert "median ARI is **0.400**" in text
-    assert "no spot changed cluster: filter_order = normalise_then_filter" in text
+    assert (
+        "`filter_order = normalise_then_filter` is left out because no spot changed cluster"
+        in text
+    )
 
 
 def test_build_runs_stores_shared_barcodes_once() -> None:

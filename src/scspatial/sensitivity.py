@@ -164,7 +164,7 @@ def match_labels(labels_a: Sequence[str], labels_b: Sequence[str]) -> dict[str, 
 
     Cluster numbering is arbitrary, so before two labellings can be compared cell by cell
     the renumbering has to be undone. This solves the assignment problem on the contingency
-    table, which is the standard way -- greedy matching on the largest overlap can assign
+    table, which is the standard way. Greedy matching on the largest overlap can assign
     two of B's clusters to the same one of A's and then double-count the agreement.
     """
     from scipy.optimize import linear_sum_assignment
@@ -191,8 +191,8 @@ def matched_label_churn(labels_a: Sequence[str], labels_b: Sequence[str]) -> flo
     """Fraction of cells that change cluster once arbitrary renumbering is undone.
 
     This is the number an analyst actually cares about: would this cell's call change? Any
-    cluster in B with no counterpart in A -- which happens whenever the two runs find
-    different numbers of clusters -- counts as changed for every cell in it, because there
+    cluster in B with no counterpart in A, which happens whenever the two runs find
+    different numbers of clusters, counts as changed for every cell in it, because there
     is no honest way to call those cells unchanged.
     """
     if len(labels_a) != len(labels_b):
