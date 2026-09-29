@@ -1,8 +1,10 @@
 """Agreement between two runs of the same analysis under different defensible choices.
 
 Global agreement is not enough. The adjusted Rand index is dominated by abundant cell
-types, so a rare population -- usually the interesting one -- can be entirely reassigned
-while ARI stays near 1.0. Both numbers are computed here and both are reported.
+types, so a rare population, often the interesting one, can be absorbed into another
+cluster while ARI stays near 1.0. Both numbers are computed here and both are reported.
+Every metric that compares clusters between runs resolves the arbitrary cluster numbering
+first with :func:`match_labels`.
 """
 
 from __future__ import annotations
@@ -66,24 +68,72 @@ def rare_population_stability(
     """Per-population retention, restricted to populations below ``rare_threshold``.
 
     Returns, for each rare population in the first labelling, the fraction of its cells
-    that remain together in the second. This is the number a global agreement score hides.
+    that land in its one-to-one counterpart in the second labelling, found by
+    :func:`match_labels`. A rare population absorbed whole into an abundant one has no
+    counterpart of its own and scores 0. Taking the best partner cluster instead would
+    score that absorption 1.0, because every cell still sits in one cluster together.
     """
     if len(labels_a) != len(labels_b):
         raise ValueError(f"length mismatch: {len(labels_a)} vs {len(labels_b)} labels")
     if not labels_a:
         raise ValueError("cannot measure stability over zero cells")
 
+    mapping = match_labels(labels_a, labels_b)
     counts = Counter(labels_a)
     total = len(labels_a)
     retention: dict[str, float] = {}
     for population, size in counts.items():
         if size / total >= rare_threshold:
             continue
-        partners = Counter(
-            b for a, b in zip(labels_a, labels_b, strict=True) if a == population
+        kept = sum(
+            1
+            for a, b in zip(labels_a, labels_b, strict=True)
+            if a == population and mapping.get(b) == population
         )
-        retention[population] = max(partners.values()) / size
+        retention[population] = kept / size
     return retention
+
+
+def matched_pairs(
+    pairs: Sequence[tuple[str, str]], mapping: dict[str, str]
+) -> set[tuple[str, ...]]:
+    """Translate cluster pairs into another labelling's cluster names.
+
+    ``mapping`` comes from :func:`match_labels`. A cluster with no counterpart keeps its own
+    name under an ``unmatched:`` prefix, so a pair that involves it can never coincide with
+    a pair in the other labelling but still counts towards the union.
+    """
+    translated: set[tuple[str, ...]] = set()
+    for left, right in pairs:
+        names = [mapping.get(name, f"unmatched:{name}") for name in (left, right)]
+        translated.add(tuple(sorted(names)))
+    return translated
+
+
+def conclusion_overlap(
+    labels_a: Sequence[str],
+    labels_b: Sequence[str],
+    pairs_a: Sequence[tuple[str, str]],
+    pairs_b: Sequence[tuple[str, str]],
+) -> float:
+    """Jaccard of two sets of enriched cluster pairs, after matching the clusters.
+
+    Cluster numbers are arbitrary, so the pair ``("3", "7")`` in one run and the same pair
+    in another need not refer to the same clusters. B's clusters are mapped onto A's by
+    :func:`match_labels` before the pair sets are compared. Two runs that partition the
+    cells identically and call the same pairs score 1.0 whatever their numbering.
+    """
+    if len(labels_a) != len(labels_b):
+        raise ValueError(f"length mismatch: {len(labels_a)} vs {len(labels_b)} labels")
+    if not labels_a:
+        raise ValueError("cannot compare conclusions over zero cells")
+    mapping = match_labels(labels_a, labels_b)
+    reference = {tuple(sorted(pair)) for pair in pairs_a}
+    other = matched_pairs(pairs_b, mapping)
+    union = reference | other
+    if not union:
+        return 1.0
+    return len(reference & other) / len(union)
 
 
 def align(

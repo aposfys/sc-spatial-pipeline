@@ -25,7 +25,7 @@ class RunResult:
     key: str
     #: Cell barcodes, parallel to ``labels``. Configurations that filter differently keep
     #: different cells, so any comparison between two runs has to align on these rather
-    #: than on position -- comparing two label vectors by index would silently score
+    #: than on position. Comparing two label vectors by index would silently score
     #: different cells against each other.
     cells: list[str]
     labels: list[str]
@@ -36,29 +36,81 @@ class RunResult:
     seconds: float
 
 
-def fetch(dataset: str = "visium_hne", cache_dir: Path | None = None):
-    """Load a public spatial dataset, cached.
+INSTALL_HINT = "the analysis stack is not installed. Run: pip install -e '.[sc,spatial]'"
 
-    Visium H&E from squidpy. Spot-based, which is why segmentation is not in the grid --
-    see the note in :mod:`scspatial.configs`.
+
+def require_stack() -> None:
+    """Exit with an install hint, not a traceback, when scanpy or squidpy is missing."""
+    try:
+        import scanpy  # noqa: F401
+        import squidpy  # noqa: F401
+    except ImportError as error:
+        raise SystemExit(
+            f"{error.name or 'scanpy/squidpy'} not found. {INSTALL_HINT}"
+        ) from None
+
+
+def fetch(dataset: str = "visium_hne", cache_dir: Path | None = None):
+    """Load a public spatial dataset, downloading it into ``cache_dir`` once.
+
+    Visium H&E from squidpy. Spot-based, which is why segmentation is not in the grid (see
+    the note in :mod:`scspatial.configs`). Without ``cache_dir`` squidpy uses its own cache.
     """
     import squidpy as sq
 
     warnings.filterwarnings("ignore")
     if dataset != "visium_hne":
         raise ValueError(f"unknown dataset {dataset!r}; only 'visium_hne' is wired up")
-    if cache_dir is not None:
-        cache_dir.mkdir(parents=True, exist_ok=True)
-    return sq.datasets.visium_hne_adata()
+    if cache_dir is None:
+        return sq.datasets.visium_hne_adata()
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    return sq.datasets.visium_hne_adata(path=cache_dir / "visium_hne_adata.h5ad")
+
+
+def looks_like_counts(matrix) -> bool:
+    """Whether a matrix holds raw counts: non-negative whole numbers."""
+    import numpy as np
+
+    values = matrix.data if hasattr(matrix, "data") and hasattr(matrix, "nnz") else matrix
+    values = np.asarray(values)
+    if values.size == 0:
+        return True
+    return bool((values >= 0).all() and np.array_equal(values, np.round(values)))
+
+
+def raw_counts(adata):
+    """The dataset as raw counts, which is where every configuration has to start.
+
+    squidpy ships ``visium_hne_adata`` already through the scanpy tutorial, so ``.X`` is
+    normalised and log-transformed and the counts sit in ``.raw``. Normalising ``.X``
+    again would put every configuration on a double transform. Results from the earlier
+    tutorial run (clusters, neighbours, PCA) are dropped so nothing downstream can pick
+    them up by accident.
+    """
+    import anndata as ad
+
+    if adata.raw is not None:
+        counts = ad.AnnData(
+            X=adata.raw.X.copy(),
+            obs=adata.obs[[]].copy(),
+            var=adata.raw.var[[]].copy(),
+            obsm={"spatial": adata.obsm["spatial"].copy()},
+            uns={"spatial": adata.uns["spatial"]} if "spatial" in adata.uns else {},
+        )
+    else:
+        counts = adata.copy()
+    if not looks_like_counts(counts.X):
+        raise ValueError("expected raw counts in .raw or .X, found non-integer values")
+    return counts
 
 
 def _normalise(adata, how: str) -> None:
     import scanpy as sc
 
-    if how == "none":
-        return
-    target = 1e6 if how == "cpm_log1p" else 1e4
-    sc.pp.normalize_total(adata, target_sum=target)
+    targets = {"cpm_log1p": 1e6, "cp10k_log1p": 1e4, "median_log1p": None}
+    if how not in targets:
+        raise ValueError(f"unknown normalisation {how!r}; expected one of {sorted(targets)}")
+    sc.pp.normalize_total(adata, target_sum=targets[how])
     sc.pp.log1p(adata)
 
 
@@ -72,9 +124,9 @@ def _filter(adata) -> None:
 def run_one(adata, config: Config) -> RunResult:
     """Run one configuration and return its labels plus its spatial conclusion.
 
-    The input is copied, so a configuration cannot contaminate the next one through an
-    in-place scanpy operation -- which is the single easiest way to make a sensitivity
-    analysis silently measure nothing.
+    ``adata`` must hold raw counts (see :func:`raw_counts`). It is copied, so a
+    configuration cannot contaminate the next one through an in-place scanpy operation,
+    which is the easiest way to make a sensitivity analysis silently measure nothing.
     """
     import time
 
@@ -85,8 +137,9 @@ def run_one(adata, config: Config) -> RunResult:
     started = time.time()
     working = adata.copy()
 
-    # Order of operations inside QC is rarely stated in methods sections and is not
-    # neutral: normalising first changes which cells the filter removes.
+    # Both orders are run because the order is rarely stated in methods sections. With
+    # these filters it cannot matter. min_genes and min_cells count non-zero entries,
+    # and normalisation and log1p leave zeros at zero.
     if config.filter_order == "filter_then_normalise":
         _filter(working)
         _normalise(working, config.normalisation)

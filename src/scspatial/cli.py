@@ -37,8 +37,27 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def package_versions() -> dict[str, str]:
+    """Versions of the packages that decide the clustering, for the findings file."""
+    import platform
+    from importlib.metadata import PackageNotFoundError, version
+
+    versions = {"python": platform.python_version()}
+    for name in ("scanpy", "squidpy", "anndata", "igraph", "numpy", "scipy"):
+        try:
+            versions[name] = version(name)
+        except PackageNotFoundError:
+            versions[name] = "not installed"
+    return versions
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+
+    if args.command in ("fetch", "grid"):
+        from scspatial.pipeline import require_stack
+
+        require_stack()
 
     if args.command == "fetch":
         from scspatial.pipeline import fetch
@@ -49,9 +68,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "grid":
         from scspatial.configs import iter_grid
-        from scspatial.pipeline import fetch, run_one
+        from scspatial.pipeline import fetch, raw_counts, run_one
 
-        adata = fetch(args.dataset, cache_dir=args.data_dir)
+        adata = raw_counts(fetch(args.dataset, cache_dir=args.data_dir))
         configs = list(iter_grid(args.mode, seed=args.seed))
         print(f"{len(configs)} configurations on {adata.shape[0]:,} spots")
 
@@ -75,6 +94,7 @@ def main(argv: list[str] | None = None) -> int:
                     "results": results,
                     "configs": [c.as_dict() for c in configs],
                     "dataset": args.dataset,
+                    "versions": package_versions(),
                 },
                 handle,
             )
@@ -82,7 +102,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "sensitivity":
-        from scspatial.report import build_findings, write
+        from scspatial.report import build_findings, build_runs, write
 
         grid_path = args.results_dir / "grid.pkl"
         if not grid_path.exists():
@@ -90,8 +110,16 @@ def main(argv: list[str] | None = None) -> int:
         with grid_path.open("rb") as handle:
             stored = pickle.load(handle)
 
-        findings = build_findings(stored["results"], stored["configs"], stored["dataset"])
+        findings = build_findings(
+            stored["results"],
+            stored["configs"],
+            stored["dataset"],
+            versions=stored.get("versions"),
+        )
         (args.results_dir / "findings.json").write_text(json.dumps(findings, indent=1))
+        # Per-configuration labels and enriched pairs, so every column can be recomputed
+        # from committed files without rerunning the grid.
+        (args.results_dir / "runs.json").write_text(json.dumps(build_runs(stored["results"])))
         out = write(args.results_dir / "findings.json", args.results_dir / "RESULTS.md")
         print(f"wrote {out}")
         return 0

@@ -6,7 +6,7 @@ justify in a methods section. That is the criterion for inclusion: not "plausibl
 space.
 
 **Segmentation is absent from this grid, and that is a property of the data, not an
-oversight.** Spot-based Visium has no segmentation step -- the spots are a fixed grid laid
+oversight.** Spot-based Visium has no segmentation step. The spots are a fixed grid laid
 down by the assay, and no analyst choice changes which transcripts land in which spot. The
 design notes name segmentation as the stage whose errors most often become discoveries, and
 that remains true; it is simply not a choice this modality offers. On imaging-based data it
@@ -19,9 +19,10 @@ import itertools
 from collections.abc import Iterator
 from dataclasses import dataclass
 
-#: Normalisation strategies. `none` is included because analysts do skip it on already
-#: size-factor-corrected data, not because it is recommended.
-NORMALISATIONS = ("cpm_log1p", "cp10k_log1p", "none")
+#: Normalisation strategies, all total-count scaling followed by log1p, differing in the
+#: target sum. `median_log1p` is scanpy's default (the median total count per spot) and is
+#: how squidpy's shipped copy of this dataset was normalised.
+NORMALISATIONS = ("cpm_log1p", "cp10k_log1p", "median_log1p")
 
 #: Highly variable gene selection. Both flavours are standard and neither is stated more
 #: often than the other.
@@ -34,7 +35,8 @@ NEIGHBOURS = (10, 15, 30)
 #: Leiden resolution. The single most consequential unreported number in the field.
 RESOLUTIONS = (0.5, 1.0)
 
-#: Whether filtering happens before or after normalisation. Rarely stated, not neutral.
+#: Whether filtering happens before or after normalisation. Rarely stated. With count-based
+#: filters it cannot change anything, because normalisation keeps zeros at zero.
 FILTER_ORDERS = ("filter_then_normalise", "normalise_then_filter")
 
 
@@ -82,8 +84,8 @@ class Config:
         }
 
 
-#: The configuration everything else is compared against. Not "the right answer" -- just
-#: the one a tutorial would produce, which is what most published pipelines are.
+#: The configuration everything else is compared against. Not "the right answer", just a
+#: standard scanpy path from raw counts.
 REFERENCE = Config(
     normalisation="cp10k_log1p",
     hvg_method="seurat",

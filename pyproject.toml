@@ -19,14 +19,16 @@ classifiers = [
 ]
 # scipy is here, not in the analysis extra, because matched_label_churn needs an
 # assignment solver and that lives in the stability layer CI exercises. It is a numerics
-# dependency, not the scverse stack -- which stays optional.
+# dependency, not the scverse stack, which stays optional.
 dependencies = ["numpy>=1.24", "scipy>=1.11"]
 
 [project.scripts]
 scspatial = "scspatial.cli:main"
 
 [project.optional-dependencies]
-sc = ["scanpy>=1.10", "anndata>=0.10"]
+# igraph is listed because sc.tl.leiden(flavor="igraph") needs it and scanpy no longer
+# pulls it in by default.
+sc = ["scanpy>=1.10", "anndata>=0.10", "igraph>=0.10"]
 spatial = ["squidpy>=1.5", "spatialdata>=0.2"]
 figures = ["matplotlib>=3.7"]
 dev = ["pytest>=7.0", "numpy>=1.24", "ruff>=0.6", "mypy>=1.11"]

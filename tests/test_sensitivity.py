@@ -39,8 +39,24 @@ def test_a_rare_population_can_dissolve_while_ari_stays_high() -> None:
 
     assert adjusted_rand_index(before, after) < 1.0
     retention = rare_population_stability(before, after)
-    assert retention["R"] == pytest.approx(0.6)
+    # Three of R's cells joined A. Only the two in B, R's matched counterpart, count.
+    assert retention["R"] == pytest.approx(0.4)
     assert "A" not in retention
+
+
+def test_a_rare_population_absorbed_whole_scores_zero() -> None:
+    """Every cell of R still shares one cluster, but that cluster is A's, not R's."""
+    abundant = ["A"] * 50 + ["B"] * 50 + ["C"] * 50 + ["D"] * 50
+    before = abundant + ["R"] * 5
+    after = abundant + ["A"] * 5
+    assert adjusted_rand_index(before, after) > 0.9
+    assert rare_population_stability(before, after)["R"] == 0.0
+
+
+def test_rare_retention_ignores_renumbering() -> None:
+    before = ["A"] * 100 + ["R"] * 5
+    after = ["x"] * 100 + ["y"] * 5
+    assert rare_population_stability(before, after) == {"R": 1.0}
 
 
 def test_abundant_populations_are_not_reported_as_rare() -> None:
@@ -104,3 +120,38 @@ def test_align_refuses_when_nothing_is_shared():
 def test_align_refuses_mismatched_inputs():
     with pytest.raises(ValueError, match="same length"):
         sensitivity.align(["c1", "c2"], ["a"], ["c1"], ["a"])
+
+
+def test_conclusion_overlap_is_one_for_a_pure_relabelling():
+    """Same clusters, same enriched pair, different numbers: the same conclusion."""
+    a = ["1", "1", "2", "2", "3", "3"]
+    b = ["7", "7", "9", "9", "4", "4"]
+    pairs_a = [("1", "2")]
+    pairs_b = [("9", "7")]
+    assert sensitivity.conclusion_overlap(a, b, pairs_a, pairs_b) == 1.0
+    # Comparing the raw numbers would call these two conclusions disjoint.
+    assert {tuple(sorted(p)) for p in pairs_a} & {tuple(sorted(p)) for p in pairs_b} == set()
+
+
+def test_conclusion_overlap_counts_a_genuinely_different_pair():
+    a = ["1", "1", "2", "2", "3", "3"]
+    b = ["7", "7", "9", "9", "4", "4"]
+    # 7 and 4 are the reference's 1 and 3, so this is a different conclusion.
+    assert sensitivity.conclusion_overlap(a, b, [("1", "2")], [("7", "4")]) == 0.0
+    both = sensitivity.conclusion_overlap(a, b, [("1", "2")], [("7", "9"), ("7", "4")])
+    assert both == pytest.approx(0.5)
+
+
+def test_conclusion_overlap_never_matches_an_unmatched_cluster():
+    """A cluster with no counterpart cannot reproduce any reference pair."""
+    a = ["1", "1", "2", "2"]
+    b = ["x", "x", "y", "z"]  # three clusters against two: one stays unmatched
+    mapping = sensitivity.match_labels(a, b)
+    unmatched = next(name for name in ("x", "y", "z") if name not in mapping)
+    score = sensitivity.conclusion_overlap(a, b, [("1", "2")], [("x", unmatched)])
+    assert score == 0.0
+
+
+def test_conclusion_overlap_of_two_empty_conclusions_is_agreement():
+    a = ["1", "1", "2", "2"]
+    assert sensitivity.conclusion_overlap(a, a, [], []) == 1.0

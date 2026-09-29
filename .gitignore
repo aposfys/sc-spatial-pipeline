@@ -16,3 +16,5 @@ results/models/
 results/*.pkl
 results/grid.pkl
 data/anndata/
+data/*.h5ad
+data/*.zarr
